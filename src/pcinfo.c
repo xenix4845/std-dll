@@ -1,46 +1,41 @@
-#include <iostream>
-#include <Windows.h>
-#include <vector>
-#include <string>
+#include <stdio.h>
+#include <windows.h>
+#include <intrin.h>
 
-// Function to retrieve CPU information
 void printCPUInfo() {
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
-    std::cout << "CPU Information:" << std::endl;
-    std::cout << "Number of Cores: " << sysInfo.dwNumberOfProcessors << std::endl;
-    std::cout << "Number of Threads: " << sysInfo.dwNumberOfProcessors * 2 << std::endl;
-}
+    printf("CPU Cores: %d\n", sysInfo.dwNumberOfProcessors);
 
-// Function to retrieve RAM capacity
-void printRAMInfo() {
+    int cpuInfo[4] = { 0, 0, 0, 0 };
+    __cpuid(cpuInfo, 1);
+    int threads = (cpuInfo[1] >> 16) & 0xFF;
+    printf("CPU Threads: %d\n", threads);
+
     MEMORYSTATUSEX memInfo;
-    memInfo.dwLength = sizeof(memInfo);
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
     GlobalMemoryStatusEx(&memInfo);
-    std::cout << "RAM Information:" << std::endl;
-    std::cout << "Total Physical Memory: " << memInfo.ullTotalPhys / (1024 * 1024) << " MB" << std::endl;
-}
+    printf("RAM Capacity: %llu bytes\n", memInfo.ullTotalPhys);
 
-// Function to retrieve GPU information
-void printGPUInfo() {
-    // Add your code here to retrieve GPU information
-    std::cout << "GPU Information:" << std::endl;
-    std::cout << "GPU Model: " << "Your GPU Model" << std::endl;
-}
+    DISPLAY_DEVICE gpuInfo;
+    gpuInfo.cb = sizeof(DISPLAY_DEVICE);
+    EnumDisplayDevices(NULL, 0, &gpuInfo, 0);
+    printf("GPU Name: %s\n", gpuInfo.DeviceString);
 
-// Function to retrieve connected hard drive information
-void printHardDriveInfo() {
-    // Add your code here to retrieve hard drive information
-    std::cout << "Hard Drive Information:" << std::endl;
-    std::cout << "Drive 1: " << "Your Drive 1 Info" << std::endl;
-    std::cout << "Drive 2: " << "Your Drive 2 Info" << std::endl;
+    DWORD drives = GetLogicalDrives();
+    char driveName[4] = { 'A', ':', '\\', '\0' };
+    for (int i = 0; i < 26; i++) {
+        if (drives & 1) {
+            driveName[0] = 'A' + i;
+            ULARGE_INTEGER freeBytesAvailable, totalBytes, totalFreeBytes;
+            GetDiskFreeSpaceEx(driveName, &freeBytesAvailable, &totalBytes, &totalFreeBytes);
+            printf("Drive %s - Capacity: %llu bytes\n", driveName, totalBytes.QuadPart);
+        }
+        drives >>= 1;
+    }
 }
 
 int main() {
     printCPUInfo();
-    printRAMInfo();
-    printGPUInfo();
-    printHardDriveInfo();
-
     return 0;
 }
