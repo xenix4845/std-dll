@@ -26,6 +26,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Download DLL
+        uses: actions/download-artifact@v2
+        with:
+          name: pcinfo
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
