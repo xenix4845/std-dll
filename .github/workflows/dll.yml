@@ -20,6 +20,11 @@ jobs:
       
       - name: Build DLL
         run: gcc -shared -o pcinfo.dll src/pcinfo.c
+      - name: Upload DLL
+        uses: actions/upload-artifact@v2
+        with:
+          name: pcinfo
+          path: pcinfo.dll
 
   release:
     needs: build
