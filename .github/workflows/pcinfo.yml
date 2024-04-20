@@ -1,4 +1,4 @@
-name: Build and Release DLL with MinGW-w64 GCC
+name: PCINFO
 
 on:
   push:
