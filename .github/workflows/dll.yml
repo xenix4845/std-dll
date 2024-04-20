@@ -1,4 +1,4 @@
-name: Build and Release DLL with GCC
+name: Build and Release DLL with MinGW-w64 GCC
 
 on:
   push:
@@ -7,117 +7,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_nightly:
+  build:
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up MinGW
-        run: |
-          choco install mingw
+      - name: Build DLL
+        run: C:\mingw-w64\mingw64\bin\gcc -shared -o pcinfo.dll SRC/pcinfo.c
 
-      - name: Add MinGW to PATH
-        run: |
-          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
-
-      - name: Create bin directory
-        run: mkdir bin
-
-      - name: Build DLL with GCC
-        run: |
-          gcc -shared -o bin/pcinfo.dll src/pcinfo.c -Iinclude
-
-      - name: Get or create release
-        id: get_release
-        shell: bash
-        run: |
-          RELEASE_RESPONSE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}")
-          RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq '.id')
-          UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | cut -d'{' -f1)
-          if [ "$RELEASE_ID" == "null" ]; then
-            RELEASE_RESPONSE=$(curl --silent -X POST "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              -d '{
-                "tag_name": "v1.0.0",
-                "target_commitish": "main",
-                "name": "v1.0.0",
-                "body": "Release v1.0.0",
-                "draft": false,
-                "prerelease": false
-              }')
-            RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq '.id')
-            UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | cut -d'{' -f1)
-          fi
-          echo "::set-output name=release_id::$RELEASE_ID"
-          echo "::set-output name=upload_url::$UPLOAD_URL"
-  check_date:
+  release:
+    needs: build
     runs-on: ubuntu-latest
-    name: Check latest commit
-    needs: build_nightly
-    outputs:
-      should_run: ${{ steps.should_run.outputs.should_run }}
+
     steps:
-      - uses: actions/checkout@v3
-
-      - id: should_run
-        continue-on-error: true
-        name: Check if latest commit date is within the previous 24 hours
-        if: ${{ github.event_name == 'schedule' }}
-        run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "should_run=false" >> $GITHUB_OUTPUT
-  
-  create_release:
-    runs-on: ubuntu-latest
-    name: Create Release
-    needs: [ check_date, build_nightly ]
-    if: ${{ needs.check_date.outputs.should_run != 'false' }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Download Artifact
-        uses: actions/download-artifact@v3
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: binary
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
 
-      - name: Echo build sha256
-        id: build_sha
-        run: |
-          sha256sum YimMenu.dll > sha256.checksum
-          echo "build_sha=$(cat sha256.checksum)" >> $GITHUB_OUTPUT
-          cat sha256.checksum
-
-      - name: Run latest-tag
-        uses: EndBug/latest-tag@84c87607fcb948bcef069c9a27445e653113979f
+      - name: Upload DLL
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          ref: nightly
-      - name: Nightly Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: Nightly [${{ secrets.GITHUB_TOKEN }}]
-          tag_name: nightly
-          body: |
-            **This release has been built by Github Actions**
-            [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-            Build SHA256:
-            ```
-            ${{ steps.build_sha.outputs.build_sha }}
-            ```
-            To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
-
-            You can download the build artifacts, generate a SHA256 checksum and compare it with the below binary.
-            Build artifacts ARE NOT automatically the same as release assets since release assets can be modified afterwards.
-
-            These are nightly builds of YimMenu, they are provided for testing purposes only:
-            - Test if your build environment produces a broken YimMenu.dll
-            - Test if source code is out of date and no longer compatible with the current version of GTA V
-
-            If you wish to use this menu as-is you are on your own, no warranty is provided.
-
-            Full Commit Hash:
-            ```
-            ${{ secrets.GITHUB_TOKEN }}
-            ```
-          files: |
-            YimMenu.dll
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: pcinfo.dll
+          asset_name: pcinfo.dll
+          asset_content_type: application/octet-stream
