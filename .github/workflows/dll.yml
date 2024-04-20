@@ -14,8 +14,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set up MinGW-w64 GCC
+        run: |
+          echo "::add-path::C:\mingw-w64\mingw64\bin"
+      
       - name: Build DLL
-        run: C:\mingw-w64\mingw64\bin\gcc -shared -o pcinfo.dll SRC/pcinfo.c
+        run: gcc -shared -o pcinfo.dll SRC/pcinfo.c
 
   release:
     needs: build
