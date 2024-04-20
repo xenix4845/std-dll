@@ -33,10 +33,10 @@ jobs:
         id: get_release
         shell: bash
         run: |
-          RELEASE_ID=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.id')
-            UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | cut -d'{' -f1) \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.upload_url')
+          RELEASE_RESPONSE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}")
+          RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq '.id')
+          UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | cut -d'{' -f1)
           if [ "$RELEASE_ID" == "null" ]; then
             RELEASE_RESPONSE=$(curl --silent -X POST "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -49,7 +49,7 @@ jobs:
                 "prerelease": false
               }')
             RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq '.id')
-            UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq '.upload_url')
+            UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | cut -d'{' -f1)
           fi
           echo "::set-output name=release_id::$RELEASE_ID"
           echo "::set-output name=upload_url::$UPLOAD_URL"
