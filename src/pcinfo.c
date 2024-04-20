@@ -19,8 +19,9 @@ void printCPUInfo() {
 
     DISPLAY_DEVICE gpuInfo;
     gpuInfo.cb = sizeof(DISPLAY_DEVICE);
-    EnumDisplayDevices(NULL, 0, &gpuInfo, 0);
-    printf("GPU Name: %s\n", gpuInfo.DeviceString);
+    for (DWORD i = 0; EnumDisplayDevices(NULL, i, &gpuInfo, 0); i++) {
+        printf("GPU Name: %s\n", gpuInfo.DeviceString);
+    }
 
     DWORD drives = GetLogicalDrives();
     char driveName[4] = { 'A', ':', '\\', '\0' };

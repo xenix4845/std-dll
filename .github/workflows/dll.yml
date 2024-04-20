@@ -35,7 +35,7 @@ jobs:
         run: |
           RELEASE_ID=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.id')
-          UPLOAD_URL=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" \
+            UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | cut -d'{' -f1) \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.upload_url')
           if [ "$RELEASE_ID" == "null" ]; then
             RELEASE_RESPONSE=$(curl --silent -X POST "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
