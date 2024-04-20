@@ -16,7 +16,10 @@ jobs:
 
       - name: Set up MinGW-w64 GCC
         run: |
+          choco install mingw -y
           echo "::add-path::C:\mingw-w64\mingw64\bin"
+          echo "::add-path::C:\mingw-w64\mingw64\lib"
+          echo "::add-path::C:\mingw-w64\mingw64\include"
       
       - name: Build DLL
         run: gcc -shared -o pcinfo.dll SRC/pcinfo.c
