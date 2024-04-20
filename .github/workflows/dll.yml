@@ -30,6 +30,7 @@ jobs:
 
       - name: Get or create release
         id: get_release
+        shell: bash
         run: |
           RELEASE_ID=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.id')
