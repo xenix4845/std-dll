@@ -1,4 +1,4 @@
-name: Build and Release DLL
+name: Build and Release DLL with GCC
 
 on:
   push:
@@ -13,14 +13,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up MSVC
-        uses: microsoft/setup-msbuild@v1.0.2
-
-      - name: Build DLL
+      - name: Set up MinGW
         run: |
-          msbuild dll.vcxproj /p:Configuration=Release /p:Platform=x64 /t:Build /p:OutDir=./bin/
-          msbuild pcinfo.cpp /p:Configuration=Release /p:Platform=x64 /t:Build /p:OutDir=bin/
-      
+          choco install mingw
+
+      - name: Add MinGW to PATH
+        run: |
+          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+
+      - name: Build DLL with GCC
+        run: |
+          gcc -shared -o bin/pcinfo.dll src/pcinfo.c -Iinclude
+
       - name: Get or create release
         id: get_release
         run: |
@@ -48,8 +52,6 @@ jobs:
       - name: Upload DLL
         id: upload_release_asset
         uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: ./bin/pcinfo.dll
