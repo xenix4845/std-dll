@@ -8,18 +8,18 @@ void printCPUInfo() {
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
     int cores = sysInfo.dwNumberOfProcessors;
-    printf("CPU Cores: %d\n", cores);
+    printf("CPU 코어 수: %d\n", cores);
 
     int cpuInfo[4] = { 0, 0, 0, 0 };
     __cpuid(cpuInfo, 1);
     int threads = (cpuInfo[1] >> 16) & 0xFF;
-    printf("CPU Threads: %d\n", threads);
+    printf("CPU 스레드 수: %d\n", threads);
 
     MEMORYSTATUSEX memInfo;
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);
     GlobalMemoryStatusEx(&memInfo);
     double ramCapacityGB = (double)memInfo.ullTotalPhys / (1024 * 1024 * 1024);
-    printf("RAM Capacity: %.2f GB\n", ramCapacityGB);
+    printf("RAM 용량: %.2f GB\n", ramCapacityGB);
 
     #define MAX_GPUS 10
     DISPLAY_DEVICE gpuInfo;
@@ -39,14 +39,14 @@ void printCPUInfo() {
                 }
             }
             if (!found) {
-                printf("GPU Name: %s\n", gpuInfo.DeviceString);
+                printf("GPU 이름: %s\n", gpuInfo.DeviceString);
                 strcpy(foundGPUs[gpuCount], gpuInfo.DeviceString); // Store found GPU
                 gpuCount++;
             }
         }
         gpuIndex++;
     }
-    printf("Number of GPUs: %d\n", gpuCount);
+    printf("탐지된 그래픽 유닛: %d\n", gpuCount);
 
     // Print drive information
     DWORD drives = GetLogicalDrives();
