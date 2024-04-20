@@ -36,23 +36,36 @@ jobs:
         with:
           name: pcinfo
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+      - name: Get or create release
+        id: get_release
+        run: |
+          RELEASE_ID=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ github.ref_name }}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.id')
+          UPLOAD_URL=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ github.ref_name }}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.upload_url')
+          if [ "$RELEASE_ID" == "null" ]; then
+            RELEASE_RESPONSE=$(curl --silent -X POST "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -d '{
+                "tag_name": "${{ github.ref_name }}",
+                "target_commitish": "main",
+                "name": "Release ${{ github.ref_name }}",
+                "body": "Release ${{ github.ref_name }}",
+                "draft": false,
+                "prerelease": false
+              }')
+            RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq '.id')
+            UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq '.upload_url')
+          fi
+          echo "::set-output name=release_id::$RELEASE_ID"
+          echo "::set-output name=upload_url::$UPLOAD_URL"
 
       - name: Upload DLL
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: pcinfo.dll
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ./pcinfo.dll
           asset_name: pcinfo.dll
           asset_content_type: application/octet-stream
