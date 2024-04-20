@@ -18,6 +18,7 @@ jobs:
 
       - name: Build DLL
         run: |
+          msbuild dll.vcxproj /p:Configuration=Release /p:Platform=x64 /t:Build /p:OutDir=./bin/
           msbuild pcinfo.cpp /p:Configuration=Release /p:Platform=x64 /t:Build /p:OutDir=bin/
       
       - name: Get or create release
